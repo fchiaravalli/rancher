@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/rancher/norman/types"
+	"github.com/rancher/rancher/pkg/auth/accessor"
 	"github.com/rancher/rancher/pkg/auth/providers/common"
 	"github.com/rancher/rancher/pkg/auth/providers/ldap"
 	"github.com/rancher/rancher/pkg/auth/tokens"
@@ -94,7 +95,7 @@ func TestSearchPrincipals(t *testing.T) {
 				},
 			}
 
-			results, err := provider.SearchPrincipals(tt.searchKey, tt.principalType, v3.Token{})
+			results, err := provider.SearchPrincipals(tt.searchKey, tt.principalType, &v3.Token{})
 			require.NoError(t, err)
 			require.Len(t, results, len(tt.principals))
 			for _, principal := range results {
@@ -112,11 +113,11 @@ type mockLdapProvider struct {
 	isLdapConfigured bool
 }
 
-func (p *mockLdapProvider) Logout(apiContext *types.APIContext, token *v3.Token) error {
+func (p *mockLdapProvider) Logout(apiContext *types.APIContext, token accessor.TokenAccessor) error {
 	panic("not implemented")
 }
 
-func (p *mockLdapProvider) LogoutAll(apiContext *types.APIContext, token *v3.Token) error {
+func (p *mockLdapProvider) LogoutAll(apiContext *types.APIContext, token accessor.TokenAccessor) error {
 	panic("not implemented")
 }
 
@@ -128,7 +129,7 @@ func (p *mockLdapProvider) AuthenticateUser(ctx context.Context, input interface
 	panic("AuthenticateUser Unimplemented!")
 }
 
-func (p *mockLdapProvider) SearchPrincipals(name, principalType string, myToken v3.Token) ([]v3.Principal, error) {
+func (p *mockLdapProvider) SearchPrincipals(name, principalType string, myToken accessor.TokenAccessor) ([]v3.Principal, error) {
 	if !p.isLdapConfigured {
 		return nil, ldap.ErrorNotConfigured{}
 	}
@@ -147,7 +148,7 @@ func (p *mockLdapProvider) CustomizeSchema(schema *types.Schema) {
 	panic("CustomizeSchema Unimplemented!")
 }
 
-func (p *mockLdapProvider) GetPrincipal(principalID string, token v3.Token) (v3.Principal, error) {
+func (p *mockLdapProvider) GetPrincipal(principalID string, token accessor.TokenAccessor) (v3.Principal, error) {
 	panic("GetPrincipal Unimplemented!")
 }
 

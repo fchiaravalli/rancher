@@ -5,11 +5,14 @@ import (
 	"testing"
 
 	management "github.com/rancher/rancher/pkg/apis/management.cattle.io"
+	wv3 "github.com/rancher/rancher/pkg/apis/management.cattle.io/v3"
 	fakes "github.com/rancher/rancher/pkg/controllers/management/auth/fakes"
 	"github.com/rancher/rancher/pkg/controllers/management/auth/project_cluster"
+	exttokens "github.com/rancher/rancher/pkg/ext/stores/tokens"
 	coreFakes "github.com/rancher/rancher/pkg/generated/norman/core/v1/fakes"
 	v3 "github.com/rancher/rancher/pkg/generated/norman/management.cattle.io/v3"
 	managementFakes "github.com/rancher/rancher/pkg/generated/norman/management.cattle.io/v3/fakes"
+	wranglerfake "github.com/rancher/wrangler/v3/pkg/generic/fake"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	v12 "k8s.io/api/core/v1"
@@ -190,14 +193,27 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdated(t *testing.T) {
+	// TODO // addititional tests covering the new code handling ext tokens.
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockUserManager := fakes.NewMockManager(ctrl)
 
+	secrets := wranglerfake.NewMockControllerInterface[*v12.Secret, *v12.SecretList](ctrl)
+	uattrs := wranglerfake.NewMockNonNamespacedControllerInterface[*wv3.UserAttribute, *wv3.UserAttributeList](ctrl)
+	users := wranglerfake.NewMockNonNamespacedControllerInterface[*wv3.User, *wv3.UserList](ctrl)
+
 	ul := &userLifecycle{
-		userManager: mockUserManager,
+		userManager:   mockUserManager,
+		extTokenStore: exttokens.NewSystemTokenStore(secrets, uattrs, users),
 	}
+
+	// No ext tokens
+	secrets.EXPECT().
+		List("cattle-tokens", gomock.Any()).
+		Return(&v12.SecretList{}, nil).
+		AnyTimes()
 
 	tests := []struct {
 		name          string
